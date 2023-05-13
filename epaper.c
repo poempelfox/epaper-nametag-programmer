@@ -1,6 +1,7 @@
 #include "ch341a.h"
 #include "epaper.h"
 #include <unistd.h>
+#include <gd.h>
 
 /* We use the following cabling:
  * VCC  == VCC
@@ -25,9 +26,6 @@
 #define DATABIT 0x20
 /* BUSY is wired to MISO, gpio-data bit 7 (Read-only!) */
 #define BUSYBIT 0x80
-
-/* extra sleep between bitbanging, in case the I/O over USB is not slow enough... */
-#define SLPDELAY 100
 
 #define clrbit(x) { gpio_data = gpio_data & (uint8_t)~x; }
 #define setbit(x) { gpio_data = gpio_data | x; }
@@ -70,7 +68,6 @@ void wrapgpioinst() {
 
 void spisendbyte(uint8_t b) {
   for (int i = 0; i < 8; i++) {
-    usleep(SLPDELAY);
     if (b & 0x80) {
       setbit(DATABIT);
     } else {
@@ -81,7 +78,6 @@ void spisendbyte(uint8_t b) {
     wrapgpioinst();
     clrbit(CLKBIT);
     wrapgpioinst();
-    usleep(SLPDELAY);
     b <<= 1;
   }
 }
@@ -165,29 +161,14 @@ void epd_setmemorypointer(int x, int y) {
 
 /* put an image buffer to the frame memory.
  * this won't update the display (yet). */
-void epd_setframememory(const unsigned char * image_buffer,
-                        int x, int y,
-                        int image_width, int image_height) {
-  int x_end;
-  int y_end;
+void epd_setframememory(gdImagePtr im) {
+  int x = 0;
+  int y = 0;
+  int x_end = EPDSIZEX - 1;
+  int y_end = EPDSIZEY - 1;
 
-  if ((image_buffer == NULL)
-   || (x < 0) || (image_width < 0)
-   || (y < 0) || (image_height < 0)) {
+  if (im == NULL) {
     return;
-  }
-  /* x point must be the multiple of 8 or the last 3 bits will be ignored */
-  x &= 0xF8;
-  image_width &= 0xFFF8;
-  if (x + image_width >= EPDSIZEX) {
-    x_end = EPDSIZEX - 1;
-  } else {
-    x_end = x + image_width - 1;
-  }
-  if (y + image_height >= EPDSIZEY) {
-    y_end = EPDSIZEY - 1;
-  } else {
-    y_end = y + image_height - 1;
   }
   epd_setmemoryarea(x, y, x_end, y_end);
   epd_setmemorypointer(x, y);
@@ -195,7 +176,13 @@ void epd_setframememory(const unsigned char * image_buffer,
   /* send the image data */
   for (int j = 0; j < y_end - y + 1; j++) {
     for (int i = 0; i < (x_end - x + 1) / 8; i++) {
-      epd_senddata(image_buffer[i + j * (image_width / 8)]);
+      int sb = 0;
+      for (int b = 0; b < 8; b++) {
+        sb <<= 1;
+        int c = gdImageGetTrueColorPixel(im, EPDSIZEY - 1 - j, i*8+b);
+        if (c != 0) { sb |= 1; }
+      }
+      epd_senddata(sb);
     }
   }
 }

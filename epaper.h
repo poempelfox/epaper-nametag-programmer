@@ -2,6 +2,9 @@
 #ifndef _EPAPER_H_
 #define _EPAPER_H_
 
+/* For gdImagePtr */
+#include <gd.h>
+
 /* global variables declared in main.c */
 extern uint8_t gpio_dir_mask;
 extern uint8_t gpio_data;
@@ -14,9 +17,7 @@ extern uint8_t gpio_data;
 void epd_init(void);
 /* put an image buffer to the frame memory.
  * this won't update the display (yet). */
-void epd_setframememory(const unsigned char * image_buffer,
-                        int x, int y,
-                        int image_width, int image_height);
+void epd_setframememory(gdImagePtr im);
 /* This displays the frame that you sent to the display before
  * (via epd_setframememory). */
 void epd_displayframe(void);
