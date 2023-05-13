@@ -159,13 +159,15 @@ void epd_setmemorypointer(int x, int y) {
   epd_waitfornotbusy();
 }
 
-/* put an image buffer to the frame memory.
- * this won't update the display (yet). */
+/* put an image buffer to the frame memory. */
 void epd_setframememory(gdImagePtr im) {
+  /* This looks a bit weird, because the epaper and its library were seing the
+   * display in 'portrait' format instead of 'landscape'. We've turned that
+   * around everywhere but in this function. */
   int x = 0;
   int y = 0;
-  int x_end = EPDSIZEX - 1;
-  int y_end = EPDSIZEY - 1;
+  int x_end = EPDSIZEY - 1;
+  int y_end = EPDSIZEX - 1;
 
   if (im == NULL) {
     return;
@@ -179,7 +181,7 @@ void epd_setframememory(gdImagePtr im) {
       int sb = 0;
       for (int b = 0; b < 8; b++) {
         sb <<= 1;
-        int c = gdImageGetTrueColorPixel(im, EPDSIZEY - 1 - j, i*8+b);
+        int c = gdImageGetTrueColorPixel(im, EPDSIZEX - 1 - j, i*8+b);
         if (c != 0) { sb |= 1; }
       }
       epd_senddata(sb);
@@ -215,7 +217,7 @@ void epd_init(void) {
   epd_sendcmd(0x11); //data entry mode
   epd_senddata(0x03);
 
-  epd_setmemoryarea(0, 0, (EPDSIZEX - 1), (EPDSIZEY - 1));
+  epd_setmemoryarea(0, 0, (EPDSIZEY - 1), (EPDSIZEX - 1));
 
   epd_sendcmd(0x21); //  Display update control
   epd_senddata(0x00);
