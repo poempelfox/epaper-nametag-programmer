@@ -29,6 +29,7 @@ void showhelpandexit(char * pn)
   printf("where COMMAND can be one of:\n");
   printf(" loadpng    loads an image from a .png file.\n");
   printf("            takes exactly one parameter: the filename.\n");
+  printf(" clear      clears the display (all white)\n");
   exit(1);
 }
 
@@ -51,20 +52,13 @@ int main(int argc, char ** argv)
       printf("Warning: The image does not have the correct size for the epaper-display\n");
       printf("         (which would be %u x %u pixels).\n", EPDSIZEX, EPDSIZEY);
     }
-#if 0
-    /* Dump the image to get an impression of how it looks */
-    for (int y = 0; y < 128; y++) {
-      for (int x = 0; x < 296; x++) {
-        int c = gdImageGetTrueColorPixel(im, x, y);
-        if (c == 0) {
-          printf("0");
-        } else {
-          printf("1");
-        }
-      }
-      printf("\n");
-    }
-#endif
+  } else if (strcmp(argv[1], "clear") == 0) {
+    /* Create a new image in memory */
+    im = gdImageCreateTrueColor(EPDSIZEX, EPDSIZEY);
+    /* Get color values */
+    int colorwhite = gdImageColorClosest(im, 255, 255, 255);
+    /* Fill the whole image with white */
+    gdImageFilledRectangle(im, 0, 0, (EPDSIZEX - 1), (EPDSIZEY - 1), colorwhite);
   } else if (strcmp(argv[1], "foo") == 0) {
     /* Create a new image in memory */
     im = gdImageCreateTrueColor(EPDSIZEX, EPDSIZEY);
@@ -81,6 +75,20 @@ int main(int argc, char ** argv)
     fprintf(stderr, "ERROR: %s is not a valid command.\n", argv[1]);
     exit(1);
   }
+#if 0
+  /* Dump the image to get an impression of how it looks */
+  for (int y = 0; y < 128; y++) {
+    for (int x = 0; x < 296; x++) {
+      int c = gdImageGetTrueColorPixel(im, x, y);
+      if (c == 0) {
+        printf(".");
+      } else {
+        printf("X");
+      }
+    }
+    printf("\n");
+  }
+#endif
 
   ret = ch341a_configure(CH341A_USB_VENDOR, CH341A_USB_PRODUCT);
   if (ret < 0) return -1;
