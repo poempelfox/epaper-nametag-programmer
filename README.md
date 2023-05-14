@@ -17,6 +17,9 @@ This code is mainly based on two things:
 
 ### Cabling
 
+Both of the voltage jumpers on the USB-to-SPI/GPIO-adapter need to be set to "3.3V".
+The mode selection jumper needs to be set to "I2C/SPI", NOT "UART".
+
 ![Image showing how to cable the e-Paper module to the USB-to-SPI/GPIO-adapter](./cabling.jpg)
 
 | USB-to-SPI | e-Paper module | Color  |
